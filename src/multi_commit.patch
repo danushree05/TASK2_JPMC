@@ -1,0 +1,207 @@
+From d861f1260f6ce8b36e732c461b923e9872a8fdf1 Mon Sep 17 00:00:00 2001
+From: danushree05 <danushree062005@gmail.com>
+Date: Wed, 10 Jul 2024 17:55:30 +0530
+Subject: [PATCH 1/5] update IState
+
+---
+ src/App.tsx | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/App.tsx b/src/App.tsx
+index 0728518..9bc08c8 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -8,6 +8,7 @@ import './App.css';
+  */
+ interface IState {
+   data: ServerRespond[],
++  showGraph: boolean;
+ }
+ 
+ /**
+-- 
+2.39.1.windows.1
+
+
+From cb3077fd5df532cbb2b31c025c03fbf1bcc60eae Mon Sep 17 00:00:00 2001
+From: danushree05 <danushree062005@gmail.com>
+Date: Wed, 10 Jul 2024 17:59:36 +0530
+Subject: [PATCH 2/5] update constructor
+
+---
+ src/App.tsx | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/App.tsx b/src/App.tsx
+index 9bc08c8..b5b1e0c 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -23,6 +23,7 @@ class App extends Component<{}, IState> {
+       // data saves the server responds.
+       // We use this state to parse data down to the child element (Graph) as element property
+       data: [],
++      showGraph: false,
+     };
+   }
+ 
+-- 
+2.39.1.windows.1
+
+
+From eec511fda2aa83fd287a61aaec7aaa9daa2b5b28 Mon Sep 17 00:00:00 2001
+From: danushree05 <danushree062005@gmail.com>
+Date: Wed, 10 Jul 2024 18:00:31 +0530
+Subject: [PATCH 3/5] update renderGraph
+
+---
+ src/App.tsx | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/App.tsx b/src/App.tsx
+index b5b1e0c..83a751e 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -31,7 +31,9 @@ class App extends Component<{}, IState> {
+    * Render Graph react component with state.data parse as property data
+    */
+   renderGraph() {
+-    return (<Graph data={this.state.data}/>)
++     if (this.state.showGraph) {
++       return <Graph data={this.state.data} />;
++     }
+   }
+ 
+   /**
+-- 
+2.39.1.windows.1
+
+
+From 1be1fd6dd397b4cc4a3d3f892fc023f8c330a12f Mon Sep 17 00:00:00 2001
+From: danushree05 <danushree062005@gmail.com>
+Date: Wed, 10 Jul 2024 18:01:47 +0530
+Subject: [PATCH 4/5] update getDataFromServer
+
+---
+ src/App.tsx | 45 ++++++++++++++++++++++++++++-----------------
+ 1 file changed, 28 insertions(+), 17 deletions(-)
+
+diff --git a/src/App.tsx b/src/App.tsx
+index 83a751e..94076b6 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -31,20 +31,31 @@ class App extends Component<{}, IState> {
+    * Render Graph react component with state.data parse as property data
+    */
+   renderGraph() {
+-     if (this.state.showGraph) {
+-       return <Graph data={this.state.data} />;
+-     }
++    if (this.state.showGraph) {
++      return <Graph data={this.state.data} />;
++    }
+   }
+ 
+   /**
+    * Get new data from server and update the state with the new data
+    */
+   getDataFromServer() {
+-    DataStreamer.getData((serverResponds: ServerRespond[]) => {
+-      // Update the state by creating a new array of data that consists of
+-      // Previous data in the state and the new data from server
+-      this.setState({ data: [...this.state.data, ...serverResponds] });
+-    });
++    let x = 0;
++    const interval = setInterval(() => {
++      DataStreamer.getData((serverResponds: ServerRespond[]) => {
++        // Update the state by creating a new array of data that consists of
++        // Previous data in the state and the new data from server
++
++        this.setState({
++          data: serverResponds,
++          showGraph: true,
++        });
++      });
++      x++;
++      if (x > 1000) {
++        clearInterval(interval);
++      }
++    }, 100);
+   }
+ 
+   /**
+@@ -53,25 +64,25 @@ class App extends Component<{}, IState> {
+   render() {
+     return (
+       <div className="App">
+-        <header className="App-header">
+-          Bank & Merge Co Task 2
+-        </header>
++        <header className="App-header">Bank & Merge Co Task 2</header>
+         <div className="App-content">
+-          <button className="btn btn-primary Stream-button"
++          <button
++            className="btn btn-primary Stream-button"
+             // when button is click, our react app tries to request
+             // new data from the server.
+             // As part of your task, update the getDataFromServer() function
+             // to keep requesting the data every 100ms until the app is closed
+             // or the server does not return anymore data.
+-            onClick={() => {this.getDataFromServer()}}>
++            onClick={() => {
++              this.getDataFromServer();
++            }}
++          >
+             Start Streaming Data
+           </button>
+-          <div className="Graph">
+-            {this.renderGraph()}
+-          </div>
++          <div className="Graph">{this.renderGraph()}</div>
+         </div>
+       </div>
+-    )
++    );
+   }
+ }
+ 
+-- 
+2.39.1.windows.1
+
+
+From aabd1ccacee0a1e18065898ec0d231104a7cd63c Mon Sep 17 00:00:00 2001
+From: danushree05 <danushree062005@gmail.com>
+Date: Wed, 10 Jul 2024 18:19:58 +0530
+Subject: [PATCH 5/5] update componentDidMount
+
+---
+ src/Graph.tsx | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/src/Graph.tsx b/src/Graph.tsx
+index 3b2a7da..8a62636 100644
+--- a/src/Graph.tsx
++++ b/src/Graph.tsx
+@@ -32,8 +32,19 @@ class Graph extends Component<IProps, {}> {
+ 
+   componentDidMount() {
+     // Get element to attach the table from the DOM.
+-    const elem: PerspectiveViewerElement = document.getElementsByTagName('perspective-viewer')[0] as unknown as PerspectiveViewerElement;
++    const elem = (document.getElementsByTagName(
++      "perspective-viewer"
++    )[0] as unknown) as PerspectiveViewerElement;
+ 
++    elem.setAttribute("view", "y_line");
++    elem.setAttribute("column-pivots", '["stock"]');
++    elem.setAttribute("row-pivots", '["timestamp"]');
++    elem.setAttribute("columns", '["top_ask_price"]');
++    elem.setAttribute(
++      "aggregates",
++      '{"stock":"distinct count", "top_ask_price":"avg", "top_bid_price":"avg", "timestamp":"distinct count"}'
++    );
++    
+     const schema = {
+       stock: 'string',
+       top_ask_price: 'float',
+-- 
+2.39.1.windows.1
+
